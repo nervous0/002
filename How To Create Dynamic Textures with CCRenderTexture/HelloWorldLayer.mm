@@ -42,93 +42,145 @@ enum {
 	return scene;
 }
 
-// on "init" you need to initialize your instance
--(id) init
-{
-	// always call "super" init
-	// Apple recommends to re-assign "self" with the "super" return value
-	if( (self=[super init])) {
-		
-		// enable touches
-		self.isTouchEnabled = YES;
-		
-		// enable accelerometer
-		self.isAccelerometerEnabled = YES;
-		
-		CGSize screenSize = [CCDirector sharedDirector].winSize;
-		CCLOG(@"Screen width %0.2f screen height %0.2f",screenSize.width,screenSize.height);
-		
-		// Define the gravity vector.
-		b2Vec2 gravity;
-		gravity.Set(0.0f, -10.0f);
-		
-		// Do we want to let bodies sleep?
-		// This will speed up the physics simulation
-		bool doSleep = true;
-		
-		// Construct a world object, which will hold and simulate the rigid bodies.
-		world = new b2World(gravity, doSleep);
-		
-		world->SetContinuousPhysics(true);
-		
-		// Debug Draw functions
-		m_debugDraw = new GLESDebugDraw( PTM_RATIO );
-		world->SetDebugDraw(m_debugDraw);
-		
-		uint32 flags = 0;
-		flags += b2DebugDraw::e_shapeBit;
-//		flags += b2DebugDraw::e_jointBit;
-//		flags += b2DebugDraw::e_aabbBit;
-//		flags += b2DebugDraw::e_pairBit;
-//		flags += b2DebugDraw::e_centerOfMassBit;
-		m_debugDraw->SetFlags(flags);		
-		
-		
-		// Define the ground body.
-		b2BodyDef groundBodyDef;
-		groundBodyDef.position.Set(0, 0); // bottom-left corner
-		
-		// Call the body factory which allocates memory for the ground body
-		// from a pool and creates the ground box shape (also from a pool).
-		// The body is also added to the world.
-		b2Body* groundBody = world->CreateBody(&groundBodyDef);
-		
-		// Define the ground box shape.
-		b2PolygonShape groundBox;		
-		
-		// bottom
-		groundBox.SetAsEdge(b2Vec2(0,0), b2Vec2(screenSize.width/PTM_RATIO,0));
-		groundBody->CreateFixture(&groundBox,0);
-		
-		// top
-		groundBox.SetAsEdge(b2Vec2(0,screenSize.height/PTM_RATIO), b2Vec2(screenSize.width/PTM_RATIO,screenSize.height/PTM_RATIO));
-		groundBody->CreateFixture(&groundBox,0);
-		
-		// left
-		groundBox.SetAsEdge(b2Vec2(0,screenSize.height/PTM_RATIO), b2Vec2(0,0));
-		groundBody->CreateFixture(&groundBox,0);
-		
-		// right
-		groundBox.SetAsEdge(b2Vec2(screenSize.width/PTM_RATIO,screenSize.height/PTM_RATIO), b2Vec2(screenSize.width/PTM_RATIO,0));
-		groundBody->CreateFixture(&groundBox,0);
-		
-		
-		//Set up sprite
-		
-		CCSpriteBatchNode *batch = [CCSpriteBatchNode batchNodeWithFile:@"blocks.png" capacity:150];
-		[self addChild:batch z:0 tag:kTagBatchNode];
-		
-		[self addNewSpriteWithCoords:ccp(screenSize.width/2, screenSize.height/2)];
-		
-		CCLabelTTF *label = [CCLabelTTF labelWithString:@"Tap screen" fontName:@"Marker Felt" fontSize:32];
-		[self addChild:label z:0];
-		[label setColor:ccc3(0,0,255)];
-		label.position = ccp( screenSize.width/2, screenSize.height-50);
-		
-		[self schedule: @selector(tick:)];
-	}
-	return self;
+-(CCSprite *)stripedSpriteWithColor1:(ccColor4F)c1 
+                              color2:(ccColor4F)c2 
+                         textureSize:(float)textureSize
+                             stripes:(int)nStripes {  
+     
+    // 1: Create new CCRenderTexture
+    CCRenderTexture *rt = [CCRenderTexture renderTextureWithWidth:textureSize height:textureSize];
+    
+    // 2: Call CCRenderTexture:begin
+    [rt beginWithClear:c1.r g:c1.g b:c1.b a:c1.a];
+    
+    // 3: Draw into the texture    
+    
+    // Layer 1: Stripes
+    glDisable(GL_TEXTURE_2D);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+    
+    CGPoint vertices[nStripes*6];
+    int nVertices = 0;
+    float x1 = -textureSize;
+    float x2;
+    float y1 = textureSize;
+    float y2 = 0;
+    float dx = textureSize / nStripes * 2;
+    float stripeWidth = dx/2;
+    for (int i=0; i<nStripes; i++) {
+        x2 = x1 + textureSize;
+        vertices[nVertices++] = CGPointMake(x1, y1);
+        vertices[nVertices++] = CGPointMake(x1+stripeWidth, y1);
+        vertices[nVertices++] = CGPointMake(x2, y2);
+        vertices[nVertices++] = vertices[nVertices-2];
+        vertices[nVertices++] = vertices[nVertices-2];
+        vertices[nVertices++] = CGPointMake(x2+stripeWidth, y2);
+        x1 += dx;
+    }
+    
+    glColor4f(c2.r, c2.g, c2.b, c2.a);
+    glVertexPointer(2, GL_FLOAT, 0, vertices);
+    glDrawArrays(GL_TRIANGLES, 0, (GLsizei)nVertices);
+    
+    glEnableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnable(GL_TEXTURE_2D);
+    
+    // Layer 2: Noise    
+//    CCSprite *noise = [CCSprite spriteWithFile:@"Noise.png"];
+    CCSprite* noise = [CCSprite spriteWithFile:@"scratch.jpg"];
+
+    [noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
+    noise.position = ccp(textureSize/2, textureSize/2);
+    [noise visit];
+    
+    // 4: Call CCRenderTexture:end
+    [rt end];
+    
+    // 5: Create a new Sprite from the texture
+    return [CCSprite spriteWithTexture:rt.sprite.texture];
+    
 }
+
+-(CCSprite*) spriteWithColor:(ccColor4F)bgColor textureSize:(float)textureSize{ 
+    
+    // Create new CCRenderTexture
+    CCRenderTexture* rt = [CCRenderTexture renderTextureWithWidth:textureSize height:textureSize];
+    
+    // Call CCRenderTexture
+    [rt beginWithClear:bgColor.r g:bgColor.g b:bgColor.b a:bgColor.a];
+    
+    glDisable(GL_TEXTURE_2D);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    
+    float gradientAlpha = 0.9;
+    CGPoint vertices[4];
+    ccColor4F colors[4];
+    int nVertices = 0;
+    
+    vertices[nVertices] = CGPointMake(0, 0);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0 };
+    vertices[nVertices] = CGPointMake(textureSize, 0);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, 0};
+    vertices[nVertices] = CGPointMake(0, textureSize);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
+    vertices[nVertices] = CGPointMake(textureSize, textureSize);
+    colors[nVertices++] = (ccColor4F){0, 0, 0, gradientAlpha};
+    
+    glVertexPointer(2, GL_FLOAT, 0, vertices);
+    glColorPointer(4, GL_FLOAT, 0, colors);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, (GLsizei)nVertices);
+    
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnable(GL_TEXTURE_2D);
+    
+    // Draw into the texture
+    // Not yet
+    CCSprite* noise = [CCSprite spriteWithFile:@"metal-texture.jpg"];
+    [noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
+    noise.position = ccp(textureSize/2,textureSize/2);
+    [noise visit];
+    
+    // Call CCRenderTexture:end
+    [rt end];
+    
+    return [CCSprite spriteWithTexture:rt.sprite.texture];
+}
+
+-(ccColor4F)randomBrightColor {
+    while (true) {
+        float requiredBrightness = 192;
+        ccColor4B randomColor = ccc4(arc4random()%255, arc4random()%255, arc4random()%255, 255 );
+        if( randomColor.r > requiredBrightness || 
+            randomColor.g > requiredBrightness ||
+            randomColor.b > requiredBrightness) {
+            return ccc4FFromccc4B(randomColor);
+        }
+    }
+}
+
+-(void)genBackground {
+    [_backgroud removeFromParentAndCleanup:YES];
+    
+    ccColor4F bgColor = [self randomBrightColor];
+    ccColor4F stripeColor = [self randomBrightColor];
+    
+    //_backgroud = [self spriteWithColor:bgColor textureSize:512];
+    int nStripes = ((arc4random() % 4) + 1) * 2;
+    _backgroud = [self stripedSpriteWithColor1:bgColor color2:stripeColor textureSize:512 stripes:nStripes];
+    
+    self.scale = 0.5;
+        
+    CGSize winSize = [CCDirector sharedDirector].winSize;
+    _backgroud.position = ccp(winSize.width/2 , winSize.height/2);
+    
+    ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT , GL_REPEAT};
+    [_backgroud.texture setTexParameters:&tp];
+    
+    [self addChild:_backgroud z:-1];
+}
+
 
 -(void) draw
 {
@@ -138,9 +190,7 @@ enum {
 	glDisable(GL_TEXTURE_2D);
 	glDisableClientState(GL_COLOR_ARRAY);
 	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-	
-	world->DrawDebugData();
-	
+		
 	// restore default GL states
 	glEnable(GL_TEXTURE_2D);
 	glEnableClientState(GL_COLOR_ARRAY);
@@ -148,111 +198,40 @@ enum {
 
 }
 
--(void) addNewSpriteWithCoords:(CGPoint)p
+// on "init" you need to initialize your instance
+-(id) init
 {
-	CCLOG(@"Add sprite %0.2f x %02.f",p.x,p.y);
-	CCSpriteBatchNode *batch = (CCSpriteBatchNode*) [self getChildByTag:kTagBatchNode];
-	
-	//We have a 64x64 sprite sheet with 4 different 32x32 images.  The following code is
-	//just randomly picking one of the images
-	int idx = (CCRANDOM_0_1() > .5 ? 0:1);
-	int idy = (CCRANDOM_0_1() > .5 ? 0:1);
-	CCSprite *sprite = [CCSprite spriteWithBatchNode:batch rect:CGRectMake(32 * idx,32 * idy,32,32)];
-	[batch addChild:sprite];
-	
-	sprite.position = ccp( p.x, p.y);
-	
-	// Define the dynamic body.
-	//Set up a 1m squared box in the physics world
-	b2BodyDef bodyDef;
-	bodyDef.type = b2_dynamicBody;
-
-	bodyDef.position.Set(p.x/PTM_RATIO, p.y/PTM_RATIO);
-	bodyDef.userData = sprite;
-	b2Body *body = world->CreateBody(&bodyDef);
-	
-	// Define another box shape for our dynamic body.
-	b2PolygonShape dynamicBox;
-	dynamicBox.SetAsBox(.5f, .5f);//These are mid points for our 1m box
-	
-	// Define the dynamic body fixture.
-	b2FixtureDef fixtureDef;
-	fixtureDef.shape = &dynamicBox;	
-	fixtureDef.density = 1.0f;
-	fixtureDef.friction = 0.3f;
-	body->CreateFixture(&fixtureDef);
-}
-
-
-
--(void) tick: (ccTime) dt
-{
-	//It is recommended that a fixed time step is used with Box2D for stability
-	//of the simulation, however, we are using a variable time step here.
-	//You need to make an informed choice, the following URL is useful
-	//http://gafferongames.com/game-physics/fix-your-timestep/
-	
-	int32 velocityIterations = 8;
-	int32 positionIterations = 1;
-	
-	// Instruct the world to perform a single step of simulation. It is
-	// generally best to keep the time step and iterations fixed.
-	world->Step(dt, velocityIterations, positionIterations);
-
-	
-	//Iterate over the bodies in the physics world
-	for (b2Body* b = world->GetBodyList(); b; b = b->GetNext())
-	{
-		if (b->GetUserData() != NULL) {
-			//Synchronize the AtlasSprites position and rotation with the corresponding body
-			CCSprite *myActor = (CCSprite*)b->GetUserData();
-			myActor.position = CGPointMake( b->GetPosition().x * PTM_RATIO, b->GetPosition().y * PTM_RATIO);
-			myActor.rotation = -1 * CC_RADIANS_TO_DEGREES(b->GetAngle());
-		}	
+	// always call "super" init
+	// Apple recommends to re-assign "self" with the "super" return value
+	if( (self=[super init])) {
+		[self genBackground];
+        self.isTouchEnabled = YES;
 	}
+    
+    [self scheduleUpdate];
+	return self;
 }
 
-- (void)ccTouchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	//Add a new body/atlas sprite at the touched location
-	for( UITouch *touch in touches ) {
-		CGPoint location = [touch locationInView: [touch view]];
-		
-		location = [[CCDirector sharedDirector] convertToGL: location];
-		
-		[self addNewSpriteWithCoords: location];
-	}
+-(void)ccTouchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
+    [self genBackground];
 }
 
-- (void)accelerometer:(UIAccelerometer*)accelerometer didAccelerate:(UIAcceleration*)acceleration
-{	
-	static float prevX=0, prevY=0;
-	
-	//#define kFilterFactor 0.05f
-#define kFilterFactor 1.0f	// don't use filter. the code is here just as an example
-	
-	float accelX = (float) acceleration.x * kFilterFactor + (1- kFilterFactor)*prevX;
-	float accelY = (float) acceleration.y * kFilterFactor + (1- kFilterFactor)*prevY;
-	
-	prevX = accelX;
-	prevY = accelY;
-	
-	// accelerometer values are in "Portrait" mode. Change them to Landscape left
-	// multiply the gravity by 10
-	b2Vec2 gravity( -accelY * 10, accelX * 10);
-	
-	world->SetGravity( gravity );
+-(void)update:(ccTime)dt{
+    float PIXEL_PER_SECOND = 100;
+    
+    NSLog(@"ccTime");
+    
+    static float offset = 0;
+    offset += PIXEL_PER_SECOND * dt;
+    CGSize textureSize = _backgroud.textureRect.size;
+    [_backgroud setTextureRect:CGRectMake(offset, 0, textureSize.width, textureSize.height)];
+    
 }
 
 // on "dealloc" you need to release all your retained objects
 - (void) dealloc
 {
-	// in case you have something to dealloc, do it in this method
-	delete world;
-	world = NULL;
 	
-	delete m_debugDraw;
-
 	// don't forget to call "super dealloc"
 	[super dealloc];
 }
