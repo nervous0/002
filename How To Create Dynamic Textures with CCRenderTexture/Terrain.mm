@@ -21,7 +21,9 @@
     float minDX = 160;
     float minDY = 60;
     int rangeDX = 80;
-    int rangeDY = 120;
+    // [iMac] 135 is optimized val more than 120
+    //int rangeDY = 120;
+    int rangeDY = 135;
     
     float x = -minDX;
     float y = winSize.height/2-minDY;
