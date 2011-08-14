@@ -10,21 +10,6 @@
 // Import the interfaces
 #import "HelloWorldLayer.h"
 
-//Pixel to metres ratio. Box2D uses metres as the unit for measurement.
-//This ratio defines how many pixels correspond to 1 Box2D "metre"
-//Box2D is optimized for objects of 1x1 metre therefore it makes sense
-//to define the ratio so that your most common object type is 1x1 metre.
-#define PTM_RATIO 32
-
-// enums that will be used as tags
-enum {
-	kTagTileMap = 1,
-	kTagBatchNode = 1,
-	kTagAnimation1 = 1,
-};
-
-
-// HelloWorldLayer implementation
 @implementation HelloWorldLayer
 
 +(CCScene *) scene
@@ -137,7 +122,7 @@ enum {
     
     // Draw into the texture
     // Not yet
-    CCSprite* noise = [CCSprite spriteWithFile:@"metal-texture.jpg"];
+    CCSprite* noise = [CCSprite spriteWithFile:@"scratch.jpg"];
     [noise setBlendFunc:(ccBlendFunc){GL_DST_COLOR, GL_ZERO}];
     noise.position = ccp(textureSize/2,textureSize/2);
     [noise visit];
@@ -164,39 +149,46 @@ enum {
     [_backgroud removeFromParentAndCleanup:YES];
     
     ccColor4F bgColor = [self randomBrightColor];
-    ccColor4F stripeColor = [self randomBrightColor];
-    
-    //_backgroud = [self spriteWithColor:bgColor textureSize:512];
-    int nStripes = ((arc4random() % 4) + 1) * 2;
-    _backgroud = [self stripedSpriteWithColor1:bgColor color2:stripeColor textureSize:512 stripes:nStripes];
-    
-    self.scale = 0.5;
-        
+    _backgroud = [self spriteWithColor:bgColor textureSize:512];
     CGSize winSize = [CCDirector sharedDirector].winSize;
     _backgroud.position = ccp(winSize.width/2 , winSize.height/2);
     
     ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT , GL_REPEAT};
     [_backgroud.texture setTexParameters:&tp];
-    
     [self addChild:_backgroud z:-1];
+    
+    ccColor4F stripeBgColor = [self randomBrightColor];
+    ccColor4F stripeColor = [self randomBrightColor];
+    int nStripes = ((arc4random() % 4) + 1) * 2;
+    CCSprite* stripes = [self stripedSpriteWithColor1:bgColor color2:stripeColor textureSize:512 stripes:nStripes];
+    ccTexParams tp2 = {GL_LINEAR, GL_LINEAR, GL_REPEAT , GL_CLAMP_TO_EDGE};
+    [stripes.texture setTexParameters:&tp2];
+    _terrain.stripes = stripes;
+    //self.scale = 0.3f;
+        
+    
+    
+    
+    
+//    ccColor4F bgColor = [self randomBrightColor];
+//    _backgroud = [self spriteWithColor:bgColor textureSize:512];
+//    
+//    CGSize winSize = [CCDirector sharedDirector].winSize;
+//    _backgroud.position = ccp(winSize.width/2, winSize.height/2);        
+//    ccTexParams tp = {GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_REPEAT};
+//    [_backgroud.texture setTexParameters:&tp];
+//    
+//    [self addChild:_backgroud];
+//    
+//    ccColor4F color3 = [self randomBrightColor];
+//    ccColor4F color4 = [self randomBrightColor];
+//    CCSprite *stripes = [self stripedSpriteWithColor1:color3 color2:color4 textureSize:512 stripes:4];
+//    ccTexParams tp2 = {GL_LINEAR, GL_LINEAR, GL_REPEAT, GL_CLAMP_TO_EDGE};
+//    [stripes.texture setTexParameters:&tp2];
+//    _terrain.stripes = stripes;
 }
 
 
--(void) draw
-{
-	// Default GL states: GL_TEXTURE_2D, GL_VERTEX_ARRAY, GL_COLOR_ARRAY, GL_TEXTURE_COORD_ARRAY
-	// Needed states:  GL_VERTEX_ARRAY, 
-	// Unneeded states: GL_TEXTURE_2D, GL_COLOR_ARRAY, GL_TEXTURE_COORD_ARRAY
-	glDisable(GL_TEXTURE_2D);
-	glDisableClientState(GL_COLOR_ARRAY);
-	glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-		
-	// restore default GL states
-	glEnable(GL_TEXTURE_2D);
-	glEnableClientState(GL_COLOR_ARRAY);
-	glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
-}
 
 // on "init" you need to initialize your instance
 -(id) init
@@ -204,11 +196,16 @@ enum {
 	// always call "super" init
 	// Apple recommends to re-assign "self" with the "super" return value
 	if( (self=[super init])) {
+        
+        _terrain = [Terrain node];
+        [self addChild:_terrain z:1];
+        
 		[self genBackground];
         self.isTouchEnabled = YES;
+        [self scheduleUpdate];
 	}
     
-    [self scheduleUpdate];
+    
 	return self;
 }
 
@@ -219,12 +216,15 @@ enum {
 -(void)update:(ccTime)dt{
     float PIXEL_PER_SECOND = 100;
     
-    NSLog(@"ccTime");
+//    NSLog(@"ccTime");
     
     static float offset = 0;
     offset += PIXEL_PER_SECOND * dt;
     CGSize textureSize = _backgroud.textureRect.size;
     [_backgroud setTextureRect:CGRectMake(offset, 0, textureSize.width, textureSize.height)];
+    
+    [_terrain setOffsetX:offset];
+    
     
 }
 

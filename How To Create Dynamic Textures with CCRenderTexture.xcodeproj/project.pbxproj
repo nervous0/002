@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0B86438413F58E2300F6F9C6 /* Terrain.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0B86438313F58E2300F6F9C6 /* Terrain.mm */; };
 		56B728DF13F4EF6A00492F0D /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 56B728DE13F4EF6A00492F0D /* QuartzCore.framework */; };
 		56B728E113F4EF6A00492F0D /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 56B728E013F4EF6A00492F0D /* OpenGLES.framework */; };
 		56B728E313F4EF6A00492F0D /* OpenAL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 56B728E213F4EF6A00492F0D /* OpenAL.framework */; };
@@ -166,6 +167,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0B86438213F58E2300F6F9C6 /* Terrain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Terrain.h; sourceTree = "<group>"; };
+		0B86438313F58E2300F6F9C6 /* Terrain.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = Terrain.mm; sourceTree = "<group>"; };
 		56B728DA13F4EF6A00492F0D /* How To Create Dynamic Textures with CCRenderTexture.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "How To Create Dynamic Textures with CCRenderTexture.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		56B728DE13F4EF6A00492F0D /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
 		56B728E013F4EF6A00492F0D /* OpenGLES.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGLES.framework; path = System/Library/Frameworks/OpenGLES.framework; sourceTree = SDKROOT; };
@@ -539,6 +542,8 @@
 			children = (
 				56B72AB313F4EF6D00492F0D /* AppDelegate.h */,
 				56B72AB413F4EF6D00492F0D /* AppDelegate.mm */,
+				0B86438213F58E2300F6F9C6 /* Terrain.h */,
+				0B86438313F58E2300F6F9C6 /* Terrain.mm */,
 				56B72AB613F4EF6D00492F0D /* RootViewController.h */,
 				56B72AB713F4EF6D00492F0D /* RootViewController.m */,
 				56B72AB913F4EF6D00492F0D /* HelloWorldLayer.h */,
@@ -1223,6 +1228,7 @@
 				56B72AB813F4EF6D00492F0D /* RootViewController.m in Sources */,
 				56B72ABB13F4EF6D00492F0D /* HelloWorldLayer.mm in Sources */,
 				56B72ABE13F4EF6D00492F0D /* GLES-Render.mm in Sources */,
+				0B86438413F58E2300F6F9C6 /* Terrain.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
