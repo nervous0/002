@@ -21,7 +21,7 @@
     float minDX = 160;
     float minDY = 60;
     int rangeDX = 80;
-    int rangeDY = 80;
+    int rangeDY = 120;
     
     float x = -minDX;
     float y = winSize.height/2-minDY;
